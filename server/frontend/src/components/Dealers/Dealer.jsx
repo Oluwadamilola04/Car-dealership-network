@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import "./Dealers.css";
 import "../assets/style.css";
@@ -17,7 +17,7 @@ const Dealer = () => {
   let params = useParams();
   let id = params.id;
 
-  const getDealer = async () => {
+  const getDealer = useCallback(async () => {
     const res = await fetch(`/djangoapp/dealer/${id}`);
     const retobj = await res.json();
 
@@ -25,16 +25,16 @@ const Dealer = () => {
       let dealerobjs = Array.from(retobj.dealer || []);
       setDealer(dealerobjs[0] || null);
     }
-  }
+  }, [id]);
 
-  const getReviews = async () => {
+  const getReviews = useCallback(async () => {
     const res = await fetch(`/djangoapp/reviews/dealer/${id}`);
     const retobj = await res.json();
 
     if (retobj.status === 200) {
       setReviews(Array.from(retobj.reviews || []));
     }
-  }
+  }, [id]);
 
   const sentimentIcon = (sentiment) => {
     if (sentiment === "positive") return positiveIcon;
@@ -58,7 +58,7 @@ const Dealer = () => {
     };
 
     loadDealer();
-  }, [id]);
+  }, [getDealer, getReviews]);
 
   return (
     <div className="app-shell">

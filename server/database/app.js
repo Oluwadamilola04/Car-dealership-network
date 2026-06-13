@@ -20,17 +20,18 @@ const Reviews = require('./review');
 
 const Dealerships = require('./dealership');
 
-try {
-  Reviews.deleteMany({}).then(()=>{
-    Reviews.insertMany(reviews_data['reviews']);
-  });
-  Dealerships.deleteMany({}).then(()=>{
-    Dealerships.insertMany(dealerships_data['dealerships']);
-  });
-  
-} catch (error) {
-  res.status(500).json({ error: 'Error fetching documents' });
-}
+const seedData = async () => {
+  try {
+    await Reviews.deleteMany({});
+    await Reviews.insertMany(reviews_data['reviews']);
+    await Dealerships.deleteMany({});
+    await Dealerships.insertMany(dealerships_data['dealerships']);
+  } catch (error) {
+    console.error('Error seeding documents', error);
+  }
+};
+
+seedData();
 
 
 // Express route to home
@@ -58,7 +59,6 @@ app.get('/fetchReviews/dealer/:id', async (req, res) => {
   }
 });
 
-// Express route to fetch all dealerships
 // Express route to fetch all dealerships
 app.get('/fetchDealers', async (req, res) => {
   try {
@@ -97,7 +97,7 @@ app.get('/fetchDealer/:id', async (req, res) => {
 app.post('/insert_review', async (req, res) => {
   const data = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
   const documents = await Reviews.find().sort( { id: -1 } )
-  let new_id = documents[0]['id']+1
+  let new_id = documents.length > 0 ? documents[0]['id']+1 : 1;
 
   const review = new Reviews({
 		"id": new_id,

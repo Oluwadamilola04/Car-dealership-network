@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import "./Dealers.css";
 import "../assets/style.css";
@@ -16,9 +16,7 @@ const PostReview = () => {
 
   let params = useParams();
   let id =params.id;
-  let dealer_url = `/djangoapp/dealer/${id}`;
   let review_url = `/djangoapp/add_review`;
-  let carmodels_url = `/djangoapp/get_cars`;
 
   const postreview = async ()=>{
     let name = sessionStorage.getItem("firstname")+" "+sessionStorage.getItem("lastname");
@@ -61,32 +59,33 @@ const PostReview = () => {
   }
 
   }
-  const get_dealer = async ()=>{
-    const res = await fetch(dealer_url, {
+  const get_dealer = useCallback(async ()=>{
+    const res = await fetch(`/djangoapp/dealer/${id}`, {
       method: "GET"
     });
     const retobj = await res.json();
-    
+
     if(retobj.status === 200) {
       let dealerobjs = Array.from(retobj.dealer)
       if(dealerobjs.length > 0)
         setDealer(dealerobjs[0])
     }
-  }
+  }, [id]);
 
-  const get_cars = async ()=>{
-    const res = await fetch(carmodels_url, {
+  const get_cars = useCallback(async ()=>{
+    const res = await fetch(`/djangoapp/get_cars`, {
       method: "GET"
     });
     const retobj = await res.json();
-    
+
     let carmodelsarr = Array.from(retobj.CarModels || [])
     setCarmodels(carmodelsarr)
-  }
+  }, []);
+
   useEffect(() => {
     get_dealer();
     get_cars();
-  },[]);
+  }, [get_dealer, get_cars]);
 
 
   return (
