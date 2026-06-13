@@ -3,23 +3,22 @@ import { useParams } from 'react-router-dom';
 import "./Dealers.css";
 import "../assets/style.css";
 import Header from '../Header/Header';
+import "../../App.css";
 
 
 const PostReview = () => {
   const [dealer, setDealer] = useState({});
   const [review, setReview] = useState("");
-  const [model, setModel] = useState();
+  const [model, setModel] = useState("");
   const [year, setYear] = useState("");
   const [date, setDate] = useState("");
   const [carmodels, setCarmodels] = useState([]);
 
-  let curr_url = window.location.href;
-  let root_url = curr_url.substring(0,curr_url.indexOf("postreview"));
   let params = useParams();
   let id =params.id;
-  let dealer_url = root_url+`djangoapp/dealer/${id}`;
-  let review_url = root_url+`djangoapp/add_review`;
-  let carmodels_url = root_url+`djangoapp/get_cars`;
+  let dealer_url = `/djangoapp/dealer/${id}`;
+  let review_url = `/djangoapp/add_review`;
+  let carmodels_url = `/djangoapp/get_cars`;
 
   const postreview = async ()=>{
     let name = sessionStorage.getItem("firstname")+" "+sessionStorage.getItem("lastname");
@@ -32,7 +31,7 @@ const PostReview = () => {
       return;
     }
 
-    let model_split = model.split(" ");
+    let model_split = model.split("|");
     let make_chosen = model_split[0];
     let model_chosen = model_split[1];
 
@@ -81,7 +80,7 @@ const PostReview = () => {
     });
     const retobj = await res.json();
     
-    let carmodelsarr = Array.from(retobj.CarModels)
+    let carmodelsarr = Array.from(retobj.CarModels || [])
     setCarmodels(carmodelsarr)
   }
   useEffect(() => {
@@ -91,33 +90,38 @@ const PostReview = () => {
 
 
   return (
-    <div>
+    <div className="app-shell">
       <Header/>
-      <div  style={{margin:"5%"}}>
-      <h1 style={{color:"darkblue"}}>{dealer.full_name}</h1>
-      <textarea id='review' cols='50' rows='7' onChange={(e) => setReview(e.target.value)}></textarea>
-      <div className='input_field'>
-      Purchase Date <input type="date" onChange={(e) => setDate(e.target.value)}/>
-      </div>
-      <div className='input_field'>
-      Car Make 
-      <select name="cars" id="cars" onChange={(e) => setModel(e.target.value)}>
-      <option value="" selected disabled hidden>Choose Car Make and Model</option>
-      {carmodels.map(carmodel => (
-          <option value={carmodel.CarMake+" "+carmodel.CarModel}>{carmodel.CarMake} {carmodel.CarModel}</option>
-      ))}
-      </select>        
-      </div >
+      <main className="content-page">
+        <section className="content-hero">
+          <p className="eyebrow dark">Post Review</p>
+          <h1>{dealer.full_name || "Dealership review"}</h1>
+          <p>Share your purchase experience and choose the car make and model attached to your review.</p>
+        </section>
+        <section className="review-form">
+          <label htmlFor="review">Review</label>
+          <textarea id='review' rows='7' onChange={(e) => setReview(e.target.value)}></textarea>
 
-      <div className='input_field'>
-      Car Year <input type="int" onChange={(e) => setYear(e.target.value)} max={2023} min={2015}/>
-      </div>
+          <label htmlFor="purchase-date">Purchase Date</label>
+          <input id="purchase-date" type="date" onChange={(e) => setDate(e.target.value)}/>
 
-      <div>
-      <button className='postreview' onClick={postreview}>Post Review</button>
+          <label htmlFor="cars">Car Make and Model</label>
+          <select name="cars" id="cars" value={model} onChange={(e) => setModel(e.target.value)}>
+            <option value="" disabled>Choose Car Make and Model</option>
+            {carmodels.map(carmodel => (
+              <option key={`${carmodel.CarMake}-${carmodel.CarModel}`} value={`${carmodel.CarMake}|${carmodel.CarModel}`}>
+                {carmodel.CarMake} {carmodel.CarModel}
+              </option>
+            ))}
+          </select>
+
+          <label htmlFor="car-year">Car Year</label>
+          <input id="car-year" type="number" onChange={(e) => setYear(e.target.value)} max={2026} min={2015}/>
+
+          <button className='button button-primary postreview' onClick={postreview}>Post Review</button>
+        </section>
+      </main>
       </div>
-    </div>
-    </div>
   )
 }
 export default PostReview

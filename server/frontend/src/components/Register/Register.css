@@ -1,17 +1,28 @@
 .register_container{
   display: flex;
   flex-direction: column;
-  margin: auto;
-  margin-top: 2%;
-  background-color: darkturquoise;
+  background-color: white;
   min-width: 350px;
-  width: 30%;
+  width: min(520px, 94vw);
+  border: 1px solid #dde4ec;
+  border-radius: 8px;
+  padding: 28px;
+  box-shadow: 0 18px 40px rgba(16, 42, 67, 0.12);
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #f4f6f8;
+  padding: 28px;
 }
 
 .inputs{
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  gap: 14px;
 }
 
 .input{
@@ -22,44 +33,77 @@
 
 .input_field{
   height:40px;
-  width:200px;
-  margin:.5cm;
+  width:100%;
+  margin:0;
   font-size: medium;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 0 12px;
 }
 
 .submit_panel{
   display: flex;
   flex-direction:column;
-  margin-top: 5%;
-  margin-bottom: 5%;
+  margin-top: 24px;
 }
 
 .submit{
-  margin-left: 30%;
-  margin-right: 30%;
   cursor: pointer;
-  font-size: large;
-  color: rgb(97, 64, 128);
-  border-radius: 10px;
-  height:50px;
+  font-size: 16px;
+  color: white;
+  background: #0f766e;
+  border: 0;
+  border-radius: 6px;
+  height:48px;
+  font-weight: 800;
 }
 
 .submit:hover {
-  background-color: wheat;
+  background-color: #115e59;
 }
 
 .header{
-  font: 4em sans-serif;
-  color: white;
-  margin: .5cm;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #18202a;
+  margin-bottom: 22px;
+}
+
+.header .text {
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.header p {
+  margin: 6px 0 0;
+  color: #667085;
+  font-size: 15px;
 }
 
 .img_icon{
-  width:40px;
-  margin:.1cm;
-  background-color:#0C9;
-  color:#FFF;
-  border-radius:50px;
-  text-align:center;
-  box-shadow: 2px 2px 3px #999;  
+  width:38px;
+  margin-right: 10px;
+  background-color:#e6f4f1;
+  border-radius:8px;
+  padding: 6px;
+}
+
+.form-message {
+  padding: 12px;
+  margin-bottom: 14px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.form-message.error {
+  color: #b42318;
+  border: 1px solid #fda29b;
+  background-color: #fff1f2;
+}
+
+.form-message.success {
+  color: #067647;
+  border: 1px solid #75e0a7;
+  background-color: #ecfdf3;
 }

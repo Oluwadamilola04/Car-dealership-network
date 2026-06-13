@@ -34,5 +34,11 @@ def initiate():
         # Add more CarModel instances as needed
     ]
 
-    for data in car_model_data:
-        CarModel.objects.create(name=data['name'], car_make=data['car_make'], type=data['type'], year=data['year'])
+    for index, data in enumerate(car_model_data, start=1):
+        CarModel.objects.create(
+            name=data['name'],
+            car_make=data['car_make'],
+            type=data['type'],
+            year=data['year'],
+            dealer_id=index
+        )

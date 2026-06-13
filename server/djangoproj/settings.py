@@ -127,8 +127,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 # Default primary key field type
@@ -136,7 +136,11 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATICFILES_DIRS = [ os.path.join(BASE_DIR, 'frontend/static'),
-	os.path.join(BASE_DIR, 'frontend/build'),
-	os.path.join(BASE_DIR, 'frontend/build/static'),]
+STATICFILES_DIRS = [
+    path for path in [
+        os.path.join(BASE_DIR, 'frontend/static'),
+        os.path.join(BASE_DIR, 'frontend/build'),
+        os.path.join(BASE_DIR, 'frontend/build/static'),
+    ] if os.path.isdir(path)
+]
 

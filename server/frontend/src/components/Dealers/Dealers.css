@@ -86,3 +86,37 @@ table{
   transform: scale(1.1);
   border: solid lightgray;
 }
+
+.review-form {
+  background: white;
+  border: 1px solid #dde4ec;
+  border-radius: 8px;
+  padding: 24px;
+  display: grid;
+  gap: 10px;
+}
+
+.review-form label {
+  color: #344054;
+  font-weight: 800;
+  margin-top: 8px;
+}
+
+.review-form textarea,
+.review-form input,
+.review-form select {
+  width: 100%;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 15px;
+}
+
+.review-form textarea {
+  resize: vertical;
+}
+
+.review-form .postreview {
+  width: fit-content;
+  margin-top: 14px;
+}

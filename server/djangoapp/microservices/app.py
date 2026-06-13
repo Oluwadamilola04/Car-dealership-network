@@ -1,5 +1,5 @@
 from flask import Flask
-from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import json
 app = Flask("Sentiment Analyzer")
 
