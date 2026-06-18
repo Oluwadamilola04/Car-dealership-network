@@ -118,7 +118,7 @@ jobs:
 
       - name: Check for private keys
         run: |
-          if git grep -n "BEGIN .*PRIVATE KEY" -- . ':!server/frontend/package-lock.json'; then
+          if git grep -n "BEGIN .*PRIVATE KEY" -- . ':!.github/workflows/main.yml' ':!server/frontend/package-lock.json'; then
             echo "Private key material was found in the repository."
             exit 1
           fi
