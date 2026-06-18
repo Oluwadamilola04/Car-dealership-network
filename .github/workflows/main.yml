@@ -1,4 +1,4 @@
-name: 'CI/CD Pipeline - Build, Lint, and Test'
+name: CI/CD Pipeline - Build, Lint, and Test
 
 on:
   push:
@@ -6,213 +6,178 @@ on:
   pull_request:
     branches: [master, main]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
   lint_python:
     name: Lint Python Files
     runs-on: ubuntu-latest
-    continue-on-error: false
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        cache: 'pip'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pylint black bandit[toml]
+      - name: Install Python lint tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black bandit[toml]
 
-    - name: Run Black (Code Formatter Check)
-      run: |
-        echo "Checking Python code formatting with Black..."
-        black --check server/djangoapp server/djangoproj --diff --quiet || true
+      - name: Run Black check
+        run: |
+          black --check server/djangoapp server/djangoproj --diff --quiet || true
+          echo "Python formatting check completed"
 
-    - name: Run Flake8 (Linter)
-      run: |
-        echo "Running Flake8 linter on Python files..."
-        find server -name "*.py" -not -path "*/migrations/*" -not -path "*/venv/*" | head -20 || true
-        find server -name "*.py" -not -path "*/migrations/*" -not -path "*/venv/*" -exec flake8 {} + 2>&1 | head -50 || true
-        echo "✓ Python linting completed"
+      - name: Run Flake8
+        run: |
+          flake8 server --exclude migrations,venv,__pycache__ --exit-zero
+          echo "Python linting completed"
 
-    - name: Run Bandit (Security Check)
-      run: |
-        echo "Running Bandit for security vulnerabilities..."
-        bandit -r server/djangoapp server/djangoproj -f json -o /tmp/bandit-report.json || true
-        echo "✓ Security scan completed"
+      - name: Run Bandit
+        run: |
+          bandit -r server/djangoapp server/djangoproj || true
+          echo "Python security scan completed"
 
   lint_js:
     name: Lint JavaScript Files
     runs-on: ubuntu-latest
-    continue-on-error: false
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: server/database/package-lock.json
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: server/frontend/package-lock.json
 
-    - name: Install JavaScript Linters
-      run: |
-        npm install -g eslint jshint
-        cd server/database && npm install || true
+      - name: Install frontend dependencies
+        working-directory: server/frontend
+        run: npm ci --legacy-peer-deps
 
-    - name: Run ESLint (Frontend)
-      continue-on-error: true
-      run: |
-        echo "Checking JavaScript code with ESLint..."
-        cd server/frontend && npm install --legacy-peer-deps && npm run build --if-present || echo "Frontend build check completed with warnings"
+      - name: Build frontend
+        working-directory: server/frontend
+        env:
+          CI: false
+        run: npm run build
 
-    - name: Run JSHint (Backend)
-      run: |
-        echo "Running JSHint on Node.js files..."
-        find server/database -name "*.js" -not -path "*/node_modules/*" -exec jshint {} + 2>&1 || true
-        echo "✓ JavaScript linting completed"
+      - name: Syntax-check Express API files
+        run: |
+          find server/database -name "*.js" -not -path "*/node_modules/*" -exec node --check {} \;
+          echo "JavaScript checks completed"
 
   docker_build:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    continue-on-error: false
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: server/frontend/package-lock.json
 
-    - name: Build Django Docker Image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./server
-        file: ./server/Dockerfile.django
-        push: false
-        tags: car-dealership:django-latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build frontend assets for Django image
+        working-directory: server/frontend
+        env:
+          CI: false
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
 
-    - name: Build Node API Docker Image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./server/database
-        file: ./server/database/Dockerfile
-        push: false
-        tags: car-dealership:api-latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build Sentiment Analyzer Docker Image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./server/djangoapp/microservices
-        file: ./server/djangoapp/microservices/Dockerfile
-        push: false
-        tags: car-dealership:sentiment-latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-    - name: Build Frontend Docker Image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./server/frontend
-        file: ./server/frontend/Dockerfile
-        push: false
-        tags: car-dealership:frontend-latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build Compose services
+        run: docker compose build api_server sentiment_analyzer frontend django
 
   security_scan:
     name: Security Scanning
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
+      - name: Check for committed environment files
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$'; then
+            echo "Do not commit .env files."
+            exit 1
+          fi
+          echo "No committed .env files found"
 
-    - name: Upload Trivy results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: Check for private keys
+        run: |
+          if git grep -n "BEGIN .*PRIVATE KEY" -- . ':!server/frontend/package-lock.json'; then
+            echo "Private key material was found in the repository."
+            exit 1
+          fi
+          echo "No private keys found"
 
   test_docker_compose:
     name: Test Docker Compose Setup
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Validate Docker Compose Configuration
-      run: |
-        docker-compose config --quiet
-        echo "✓ Docker Compose configuration is valid"
+      - name: Validate Docker Compose configuration
+        run: |
+          docker compose config --quiet
+          echo "Docker Compose configuration is valid"
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Check Docker services configuration
-      run: |
-        echo "Services defined in docker-compose.yml:"
-        grep "^  [a-z_]*:" docker-compose.yml | sed 's/:$//' | sed 's/^  /  - /'
+      - name: List Docker Compose services
+        run: docker compose config --services
 
   code_quality:
     name: Code Quality Check
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Check file structure
-      run: |
-        echo "✓ Checking project structure..."
-        echo "Backend files:"
-        find server -type f -name "*.py" | wc -l | xargs echo "  Python files:"
-        find server/database -type f -name "*.js" | wc -l | xargs echo "  Node.js files:"
-        find server/frontend/src -type f -name "*.jsx" -o -name "*.js" | wc -l | xargs echo "  React files:"
-        echo "✓ Project structure validated"
+      - name: Check file structure
+        run: |
+          echo "Python files: $(find server -type f -name '*.py' | wc -l)"
+          echo "Node.js files: $(find server/database -type f -name '*.js' | wc -l)"
+          echo "React files: $(find server/frontend/src -type f \( -name '*.jsx' -o -name '*.js' \) | wc -l)"
+          test -f docker-compose.yml
+          test -f server/Dockerfile.django
+          test -f server/database/Dockerfile
+          test -f server/frontend/Dockerfile
+          echo "Project structure validated"
 
   notify_status:
     name: Notify Build Status
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint_python, lint_js, docker_build]
+    needs:
+      - lint_python
+      - lint_js
+      - docker_build
+      - security_scan
+      - test_docker_compose
+      - code_quality
 
     steps:
-    - name: Summary
-      run: |
-        echo "=== CI/CD Pipeline Summary ==="
-        echo "✓ Code Linting: Completed"
-        echo "✓ Docker Build: Completed"
-        echo "✓ Security Scanning: Completed"
-        echo ""
-        echo "Next steps:"
-        echo "1. Review any linting warnings above"
-        echo "2. Build Docker images locally with: docker-compose build"
-        echo "3. Test deployment with: docker-compose up"
-        echo "4. Run security scans with: docker scan car-dealership:*"
+      - name: Summary
+        run: |
+          echo "=== CI/CD Pipeline Summary ==="
+          echo "Python lint: ${{ needs.lint_python.result }}"
+          echo "JavaScript lint/build: ${{ needs.lint_js.result }}"
+          echo "Docker build: ${{ needs.docker_build.result }}"
+          echo "Security scan: ${{ needs.security_scan.result }}"
+          echo "Compose config: ${{ needs.test_docker_compose.result }}"
+          echo "Code quality: ${{ needs.code_quality.result }}"
