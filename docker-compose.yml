@@ -67,9 +67,10 @@ services:
       dockerfile: Dockerfile.django
     container_name: car_dealership_django
     environment:
-      DEBUG: "False"
-      SECRET_KEY: "your-secret-key-change-in-production"
-      ALLOWED_HOSTS: "localhost,127.0.0.1,django"
+      DEBUG: "${DEBUG:-False}"
+      SECRET_KEY: "${SECRET_KEY:-your-secret-key-change-in-production}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS:-localhost,127.0.0.1,django}"
+      CSRF_TRUSTED_ORIGINS: "${CSRF_TRUSTED_ORIGINS:-}"
       DATABASE_URL: "sqlite:///db.sqlite3"
       BACKEND_URL: "http://api_server:3030"
       SENTIMENT_ANALYZER_URL: "http://sentiment_analyzer:5000/"
