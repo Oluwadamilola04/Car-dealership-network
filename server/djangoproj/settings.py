@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -150,4 +151,16 @@ STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'frontend/build/static'),
     ] if os.path.isdir(path)
 ]
+
+# Serve static files (including Django admin CSS/JS) directly from Gunicorn
+# via WhiteNoise, since DEBUG=False means Django's dev static handler is off.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+WHITENOISE_USE_FINDERS = DEBUG
 
